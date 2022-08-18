@@ -1,0 +1,26 @@
+name: Dispatch to repo
+on: [push, workflow_dispatch]
+  #pull_request:
+  #  branches:
+  #    - main
+  #  types: [closed]
+  #push:
+   # branches:
+   #   - main
+   #   - repository-dispatch-action
+
+jobs:
+  dispatch:
+    if: ${{ github.event.pull_request.merged || github.event_name == 'workflow_dispatch'}}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        repo: ["equinor/robotics-deployment"]
+    steps:
+      - name: Push to repo
+        uses: peter-evans/repository-dispatch@v2.0.0
+        with:
+          token: ${{ secrets.PAT }}
+          repository: ${{ matrix.repo }}
+          event-type: update
+          client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}", "module": "isar", "branch": "main"}'
