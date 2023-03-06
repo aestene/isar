@@ -2,6 +2,7 @@ from abc import ABC
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import List, Optional, Type
+from uuid import UUID, uuid4
 
 from alitra import Pose
 

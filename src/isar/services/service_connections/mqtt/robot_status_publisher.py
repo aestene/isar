@@ -1,15 +1,12 @@
 import json
-import logging
 import time
 from datetime import datetime
-from logging import Logger
 from queue import Queue
 from threading import Thread
 
 from isar.config.settings import settings
-from isar.state_machine.state_machine import StateMachine
 from isar.state_machine.states_enum import States
-from robot_interface.models.exceptions import RobotCommunicationException
+from isar.state_machine.state_machine import StateMachine
 from robot_interface.models.mission.status import RobotStatus
 from robot_interface.robot_interface import RobotInterface
 from robot_interface.telemetry.mqtt_client import MqttPublisher
@@ -78,16 +75,10 @@ class RobotStatusPublisher:
 
 class RobotStatusMonitor:
     def __init__(self, robot: RobotInterface):
-        self.robot: RobotInterface = robot
+        self.robot = robot
         self.robot_status: RobotStatus = RobotStatus.Offline
-        self.logger: Logger = logging.getLogger("robot_status_monitor")
 
     def run(self) -> None:
         while True:
-            try:
-                self.robot_status = self.robot.robot_status()
-            except RobotCommunicationException:
-                self.logger.warning(
-                    "Failed to get robot status due to a communication exception"
-                )
-                time.sleep(settings.ROBOT_API_STATUS_POLL_INTERVAL)
+            self.robot_status = self.robot.robot_status()
+            time.sleep(settings.ROBOT_API_STATUS_POLL_INTERVAL)

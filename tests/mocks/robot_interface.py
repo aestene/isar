@@ -10,9 +10,15 @@ from robot_interface.models.inspection.inspection import (
     Image,
     ImageMetadata,
     Inspection,
+    TimeIndexedPose,
 )
-from robot_interface.models.mission import InspectionStep, Step, StepStatus
-from robot_interface.models.mission.status import RobotStatus
+from robot_interface.models.mission import (
+    InspectionStep,
+    Mission,
+    RobotStatus,
+    Step,
+    StepStatus,
+)
 from robot_interface.robot_interface import RobotInterface
 
 
@@ -34,6 +40,9 @@ class MockRobot(RobotInterface):
         self.stop_return_value: bool = stop
         self.robot_pose_return_value: Pose = pose
         self.robot_status_return_value: RobotStatus = robot_status
+
+    def initiate_mission(self, mission: Mission) -> None:
+        return
 
     def initiate_step(self, step: Step) -> None:
         return
@@ -64,10 +73,13 @@ class MockRobot(RobotInterface):
 def mock_image_metadata() -> ImageMetadata:
     return ImageMetadata(
         datetime.now(),
-        Pose(
-            Position(0, 0, 0, Frame("robot")),
-            Orientation(0, 0, 0, 1, Frame("robot")),
-            Frame("robot"),
+        TimeIndexedPose(
+            Pose(
+                Position(0, 0, 0, Frame("robot")),
+                Orientation(0, 0, 0, 1, Frame("robot")),
+                Frame("robot"),
+            ),
+            datetime.now(),
         ),
         file_type="jpg",
     )

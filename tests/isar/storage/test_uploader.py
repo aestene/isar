@@ -8,19 +8,26 @@ from alitra import Frame, Orientation, Pose, Position
 from injector import Injector
 
 from isar.models.communication.queues.queues import Queues
-from isar.models.mission import Mission
 from isar.models.mission_metadata.mission_metadata import MissionMetadata
 from isar.storage.storage_interface import StorageInterface
 from isar.storage.uploader import Uploader
-from robot_interface.models.inspection.inspection import ImageMetadata, Inspection
+from robot_interface.models.inspection.inspection import (
+    ImageMetadata,
+    Inspection,
+    TimeIndexedPose,
+)
+from robot_interface.models.mission import Mission
 
 MISSION_ID = "some-mission-id"
 ARBITRARY_IMAGE_METADATA = ImageMetadata(
     datetime.now(),
-    Pose(
-        Position(0, 0, 0, Frame("asset")),
-        Orientation(x=0, y=0, z=0, w=1, frame=Frame("asset")),
-        Frame("asset"),
+    TimeIndexedPose(
+        Pose(
+            Position(0, 0, 0, Frame("asset")),
+            Orientation(x=0, y=0, z=0, w=1, frame=Frame("asset")),
+            Frame("asset"),
+        ),
+        datetime.now(),
     ),
     file_type="jpg",
 )
@@ -47,10 +54,12 @@ def uploader_thread(injector) -> UploaderThread:
 def test_should_upload_from_queue(uploader_thread) -> None:
     mission: Mission = Mission([])
     inspection: Inspection = Inspection(ARBITRARY_IMAGE_METADATA)
+    metadata: MissionMetadata = MissionMetadata(mission.id)
     message: Tuple[Inspection, MissionMetadata] = (
         inspection,
-        mission.metadata,
+        metadata,
     )
+
     uploader_thread.uploader.upload_queue.put(message)
     time.sleep(1)
     assert uploader_thread.uploader.storage_handlers[0].blob_exists(inspection)
@@ -59,9 +68,10 @@ def test_should_upload_from_queue(uploader_thread) -> None:
 def test_should_retry_failed_upload_from_queue(uploader_thread, mocker) -> None:
     mission: Mission = Mission([])
     inspection: Inspection = Inspection(ARBITRARY_IMAGE_METADATA)
+    metadata: MissionMetadata = MissionMetadata(mission.id)
     message: Tuple[Inspection, MissionMetadata] = (
         inspection,
-        mission.metadata,
+        metadata,
     )
 
     # Need it to fail so that it retries

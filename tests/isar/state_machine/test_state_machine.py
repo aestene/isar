@@ -10,7 +10,7 @@ from pytest_mock import MockerFixture
 
 from isar.mission_planner.local_planner import LocalPlanner
 from isar.models.communication.queues.queues import Queues
-from isar.models.mission import Mission, Task
+from isar.models.mission_metadata.mission_metadata import MissionMetadata
 from isar.services.utilities.scheduling_utilities import SchedulingUtilities
 from isar.services.utilities.threaded_request import ThreadedRequest
 from isar.state_machine.state_machine import StateMachine, main
@@ -18,8 +18,14 @@ from isar.state_machine.states_enum import States
 from isar.storage.storage_interface import StorageInterface
 from isar.storage.uploader import Uploader
 from robot_interface.models.exceptions import RobotException
-from robot_interface.models.mission import DriveToPose, Step, TakeImage
-from robot_interface.models.mission.status import StepStatus
+from robot_interface.models.mission import (
+    DriveToPose,
+    Mission,
+    Step,
+    StepStatus,
+    TakeImage,
+    Task,
+)
 from tests.mocks.pose import MockPose
 from tests.mocks.robot_interface import MockRobot
 from tests.mocks.step import MockStep
@@ -88,9 +94,11 @@ empty_mission: Mission = Mission([], None)
 def test_state_machine_transitions(injector, state_machine_thread) -> None:
     step: Step = DriveToPose(pose=MockPose.default_pose)
     mission: Mission = Mission(tasks=[Task(steps=[step])])  # type: ignore
-
+    metadata: MissionMetadata = MissionMetadata(mission.id)
     scheduling_utilities: SchedulingUtilities = injector.get(SchedulingUtilities)
-    scheduling_utilities.start_mission(mission=mission, initial_pose=None)
+    scheduling_utilities.start_mission(
+        mission=mission, initial_pose=None, mission_metadata=metadata
+    )
 
     time.sleep(3)
     expected_transitions_list = deque(
@@ -114,11 +122,14 @@ def test_state_machine_failed_dependency(
     drive_to_step: Step = DriveToPose(pose=MockPose.default_pose)
     inspection_step: Step = MockStep.take_image_in_coordinate_direction
     mission: Mission = Mission(tasks=[Task(steps=[drive_to_step, inspection_step])])  # type: ignore
+    metadata: MissionMetadata = MissionMetadata(mission.id)
 
     mocker.patch.object(MockRobot, "step_status", return_value=StepStatus.Failed)
 
     scheduling_utilities: SchedulingUtilities = injector.get(SchedulingUtilities)
-    scheduling_utilities.start_mission(mission=mission, initial_pose=None)
+    scheduling_utilities.start_mission(
+        mission=mission, initial_pose=None, mission_metadata=metadata
+    )
 
     time.sleep(3)
     expected_transitions_list = deque(
@@ -144,8 +155,11 @@ def test_state_machine_with_successful_collection(
     step: TakeImage = MockStep.take_image_in_coordinate_direction
     mission: Mission = Mission(tasks=[Task(steps=[step])])
     scheduling_utilities: SchedulingUtilities = injector.get(SchedulingUtilities)
+    metadata: MissionMetadata = MissionMetadata(mission.id)
 
-    scheduling_utilities.start_mission(mission=mission, initial_pose=None)
+    scheduling_utilities.start_mission(
+        mission=mission, initial_pose=None, mission_metadata=metadata
+    )
     time.sleep(3)
     expected_transitions_list = deque(
         [
@@ -174,8 +188,11 @@ def test_state_machine_with_unsuccessful_collection(
     step: TakeImage = MockStep.take_image_in_coordinate_direction
     mission: Mission = Mission(tasks=[Task(steps=[step])])
     scheduling_utilities: SchedulingUtilities = injector.get(SchedulingUtilities)
+    metadata: MissionMetadata = MissionMetadata(mission.id)
 
-    scheduling_utilities.start_mission(mission=mission, initial_pose=None)
+    scheduling_utilities.start_mission(
+        mission=mission, initial_pose=None, mission_metadata=metadata
+    )
     time.sleep(3)
     expected_transitions_list = deque(
         [
@@ -202,8 +219,11 @@ def test_state_machine_with_successful_mission_stop(
 ) -> None:
     step: TakeImage = MockStep.take_image_in_coordinate_direction
     mission: Mission = Mission(tasks=[Task(steps=[step])])
+    metadata: MissionMetadata = MissionMetadata(mission.id)
     scheduling_utilities: SchedulingUtilities = injector.get(SchedulingUtilities)
-    scheduling_utilities.start_mission(mission=mission, initial_pose=None)
+    scheduling_utilities.start_mission(
+        mission=mission, initial_pose=None, mission_metadata=metadata
+    )
     scheduling_utilities.stop_mission()
     expected = deque(
         [
@@ -231,8 +251,11 @@ def test_state_machine_with_unsuccsessful_mission_stop(
 ) -> None:
     step: TakeImage = MockStep.take_image_in_coordinate_direction
     mission: Mission = Mission(tasks=[Task(steps=[step])])
+    metadata: MissionMetadata = MissionMetadata(mission.id)
     scheduling_utilities: SchedulingUtilities = injector.get(SchedulingUtilities)
-    scheduling_utilities.start_mission(mission=mission, initial_pose=None)
+    scheduling_utilities.start_mission(
+        mission=mission, initial_pose=None, mission_metadata=metadata
+    )
     mocker.patch.object(ThreadedRequest, "get_output", side_effect=RobotException)
     scheduling_utilities.stop_mission()
     expected = deque(

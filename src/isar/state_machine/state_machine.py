@@ -19,8 +19,7 @@ from isar.mission_planner.task_selector_interface import (
 )
 from isar.models.communication.message import StartMissionMessage
 from isar.models.communication.queues.queues import Queues
-from isar.models.mission import Mission, Task
-from isar.models.mission.status import MissionStatus, TaskStatus
+from isar.models.mission_metadata.mission_metadata import MissionMetadata
 from isar.state_machine.states import (
     Idle,
     Initialize,
@@ -32,8 +31,14 @@ from isar.state_machine.states import (
 )
 from isar.state_machine.states_enum import States
 from robot_interface.models.initialize.initialize_params import InitializeParams
-from robot_interface.models.mission import StepStatus
-from robot_interface.models.mission.step import Step
+from robot_interface.models.mission import (
+    Mission,
+    MissionStatus,
+    Step,
+    StepStatus,
+    Task,
+    TaskStatus,
+)
 from robot_interface.robot_interface import RobotInterface
 from robot_interface.telemetry.mqtt_client import MqttClientInterface
 from robot_interface.utilities.json_service import EnhancedJSONEncoder
@@ -194,6 +199,7 @@ class StateMachine(object):
 
         self.stopped: bool = False
         self.current_mission: Optional[Mission] = None
+        self.current_mission_metadata: Optional[MissionMetadata] = None
         self.current_task: Optional[Task] = None
         self.current_step: Optional[Step] = None
         self.initial_pose: Optional[Pose] = None
