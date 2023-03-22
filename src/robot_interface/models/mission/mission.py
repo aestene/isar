@@ -1,7 +1,8 @@
-from dataclasses import dataclass
-from typing import List, Union
+from dataclasses import dataclass, field
+from typing import List
 from uuid import UUID, uuid4
 
+from isar.services.utilities.uuid_string_factory import uuid4_string
 from robot_interface.models.mission.status import MissionStatus
 from robot_interface.models.mission.task import Task
 
@@ -9,7 +10,7 @@ from robot_interface.models.mission.task import Task
 @dataclass
 class Mission:
     tasks: List[Task]
-    id: Union[UUID, int, str, None] = None
+    id: str = field(default_factory=uuid4_string, init=True)
     status: MissionStatus = MissionStatus.NotStarted
 
     def _set_unique_id(self) -> None:
